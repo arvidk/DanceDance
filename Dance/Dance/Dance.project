@@ -129,7 +129,7 @@ ARM_GCC_M4FPLIB=$(GccArmDir)/lib/gcc/arm-none-eabi/7.2.1/thumb/v7e-m]]>
     </Configuration>
   </Settings>
   <VirtualDirectory Name="src">
-    <File Name="startup.c"/>
+    <File Name="Dance_main.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="resources">
     <File Name="md407-ram.x"/>
