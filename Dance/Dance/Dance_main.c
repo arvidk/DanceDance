@@ -4,7 +4,63 @@
  *
  */
  
- 
+#define SIMULATOR 
+
+#define GPIO_D 			0x40020C00 /* MD407 port D */
+#define portModer_D 	((volatile unit_32*) (GPIO_D))
+#define portOtyper_D 	((volatile unit_16*) (GPIO_D+0x4)) 
+#define portIdr_D 		((volatile unit_16*) (GPIO_D+0x10)) 
+#define portIdrLow_D 	((volatile unit_8 *) (GPIO_D+0x10))
+#define portIdrHigh_D 	((volatile unit_8 *) (GPIO_D+0x10+1)) 
+#define portOdrLow_D 	((volatile unit_8 *) (GPIO_D+0x14))
+#define portOdrHigh_D 	((volatile unit_8 *) (GPIO_D+0x15))
+
+#define GPIO_E 			0x40021000 /* MD407 port E */
+#define portModer_E 	((volatile unit_32*) (GPIO_E))
+#define portOtyper_E 	((volatile unit_16*) (GPIO_E+0x4)) 
+#define portIdr_E 		((volatile unit_16*) (GPIO_E+0x10)) 
+#define portIdrLow_E 	((volatile unit_8 *) (GPIO_E+0x10))
+#define portIdrHigh_E 	((volatile unit_8 *) (GPIO_E+0x10+1)) 
+#define portOdrLow_E 	((volatile unit_8 *) (GPIO_E+0x14))
+#define portOdrHigh_E 	((volatile unit_8 *) (GPIO_E+0x15))
+
+#define EXTI 		0x40013C00 
+#define EXTI_IMR 	((volatile unit_32 *) (EXTI+0x00 ))
+#define EXTI_EMR 	((volatile unit_32 *) (EXTI+0x04 ))
+#define EXTI_RTSR 	((volatile unit_32 *) (EXTI+0x08 ))
+#define EXTI_FTSR 	((volatile unit_32 *) (EXTI+0x0C ))
+#define EXTI_SWIER 	((volatile unit_32 *) (EXTI+0x10 ))
+#define EXTI_PR 	((volatile unit_32 *) (EXTI+0x14 ))
+
+#define SYSCFG 								0x40013800
+#define SYSCFG_MEMRMP 	((volatile unit_32 *) (SYSCFG 	   ))
+#define SYSCFG_PMC	 	((volatile unit_32 *) (SYSCFG+0x04 ))
+#define SYSCFG_EXTICR1 	((volatile unit_32 *) (SYSCFG+0x08 ))
+#define SYSCFG_EXTICR2 	((volatile unit_32 *) (SYSCFG+0x0C ))
+#define SYSCFG_EXTICR3 	((volatile unit_32 *) (SYSCFG+0x10 ))
+#define SYSCFG_EXTICR4 	((volatile unit_32 *) (SYSCFG+0x14 ))
+
+#define NVIC 									0xE000E100
+#define NVIC_ISER0	 	((volatile unit_32 *) (NVIC+0x00 ))
+#define NVIC_ISER1	 	((volatile unit_32 *) (NVIC+0x04 ))
+#define NVIC_ISER2	 	((volatile unit_32 *) (NVIC+0x08 ))
+
+#define NVIC_CER0	 	((volatile unit_32 *) (NVIC+0x80 ))
+#define NVIC_CER1	 	((volatile unit_32 *) (NVIC+0x84 ))
+#define NVIC_CER2	 	((volatile unit_32 *) (NVIC+0x88 ))
+
+#define NVIC_ISPR0	 	((volatile unit_32 *) (NVIC+0x100 ))
+#define NVIC_ISPR1	 	((volatile unit_32 *) (NVIC+0x104 ))
+#define NVIC_ISPR2	 	((volatile unit_32 *) (NVIC+0x108 ))
+
+#define NVIC_ICPR0	 	((volatile unit_32 *) (NVIC+0x180 ))
+#define NVIC_ICPR1	 	((volatile unit_32 *) (NVIC+0x184 ))
+#define NVIC_ICPR2	 	((volatile unit_32 *) (NVIC+0x188 ))
+
+#define NVIC_IABR0	 	((volatile unit_32 *) (NVIC+0x200 ))
+#define NVIC_IABR1	 	((volatile unit_32 *) (NVIC+0x204 ))
+#define NVIC_IABR2	 	((volatile unit_32 *) (NVIC+0x208 ))
+
 #define B_RS 	 0x01 
 #define B_RW	 0x02
 #define B_SELECT 0x04
@@ -13,23 +69,12 @@
 #define B_RST 	 0x20
 #define B_E 	 0x40
 
-
-
 #define LCD_ON			0x3F
 #define LCD_OFF			0x3E
 #define LCD_set_addr	0x40
 #define LCD_set_page	0xB8
 #define LCD_disp_start	0xC0
 
-#define GPIO_E 0x40021000 /* MD407 port E */
-#define portModer ((volatile unsigned long *) (GPIO_E))
-#define portOtyper ((volatile unsigned short *) (GPIO_E+0x4)) 
-#define portIdr ((volatile unsigned short *)(GPIO_E+0x10)) 
-
-#define portIdrLow ((volatile unsigned char *) (GPIO_E+0x10))
-#define portIdrHigh ((volatile unsigned char *) (GPIO_E+0x10+1)) 
-#define portOdrLow ((volatile unsigned char*) (GPIO_E+0x14))
-#define portOdrHigh ((volatile unsigned char*) (GPIO_E+0x15))
 
 	unsigned long STK_CTRL = 0xE000E010;
 	unsigned long STK_LOAD = 0xE000E014;
@@ -388,7 +433,7 @@ void ascii_init(void){
 }
 void ascii_write_char(char c){
 	while((ascii_read_status() & 0x80) == 0x80){
-		delay_250ns;
+		delay_250ns();
 		}
 		delay_mikro(8);
 		ascii_write_data(c);
@@ -405,8 +450,13 @@ void graphic_init(){
 	graphic_ctrl_bit_clear(B_CS1|B_CS2|B_RST|B_E);
 	delay_milli(30);
 	graphic_ctrl_bit_set(B_RST);
-	//delay_milli(100);
-	delay_milli(10);
+	unit_8 d = 100;
+	#ifdef SIMULATOR
+	d = 10;
+	#endif
+	
+	delay_milli(d);
+	
 	graphic_write_command(LCD_OFF,			B_CS1|B_CS2);//LCD off
 	graphic_write_command(LCD_ON,			B_CS1|B_CS2);//LCD on
 	graphic_write_command(LCD_disp_start,	B_CS1|B_CS2);//start=0
@@ -421,6 +471,10 @@ int main(void){
 	init_app();
 	graphic_init();
 	ascii_init();
+	delay_milli(10);
+	//start of program
+	
+	
 	
 	return 0;
 }
