@@ -292,6 +292,108 @@ void pixel(unit_8 x,unit_8 y, unit_8 set){
 	graphic_write_data(mask,controller);
 }
 
+
+void ascii_ctrl_bit_set( unsigned char x ) { /* Funktion fÃ¶r att 1-stÃ€lla bitar */
+unsigned char c;
+c = *portOdrLow;
+c |= ( B_SELECT | x );
+*portOdrLow = c;
+}
+
+void ascii_ctrl_bit_clear( unsigned char x ){
+unsigned char c;
+c = *portOdrLow;
+c = B_SELECT | ( c & ~x );
+*portOdrLow = c;
+} 
+
+void ascii_write_controller( unsigned char c ){
+ascii_ctrl_bit_set( B_E );
+*portOdrHigh = c;
+delay_250ns();
+ascii_ctrl_bit_clear( B_E );
+}
+
+void ascii_write_cmd(char command){
+	*portOdrLow = (*portOdrLow & ~0x03); //turns off RS and RW
+	ascii_write_controller(command);
+}
+
+void ascii_write_data(char command){
+	*portOdrLow = ((*portOdrLow & ~0x02)| 0x01); //turns off RW and RS on
+ 	ascii_write_controller(command);
+}
+
+unsigned char ascii_read_controller( void ){
+ascii_ctrl_bit_set( B_E );
+delay_250ns(); /* max 360 ns */
+delay_250ns();
+unsigned char rv = *portIdrHigh;
+ascii_ctrl_bit_clear( B_E );
+return rv;
+} 
+
+unsigned char ascii_read_status(void){
+	*portModer= (0x0000FFFF & *portModer); //sets port 15-8 to inputs
+	*portOdrLow = ((*portOdrLow & ~0x01)| 0x02); //turns off RS and RW on
+	unsigned char rv = ascii_read_controller();
+	*portModer= (0x55550000 | *portModer); //sets port 15-8 to outputs
+	return rv;
+}	
+
+unsigned char ascii_read_data(void){
+	*portModer=  (0x0000FFFF & *portModer); //sets port 15-8 to inputs
+	*portOdrLow = (*portOdrLow | 0x03); //turns on RS and RW on
+	unsigned char rv = ascii_read_controller();
+	*portModer=(0x55550000 | *portModer); //sets port 15-8 to outputs
+	return rv;
+}
+	
+void ascii_command(char cmd){
+	while((ascii_read_status() & 0x80) == 0x80){//Ã€ndrade frÃ¥n "ascii_read_status() & 0x80)"
+		}
+		delay_mikro(8);
+		ascii_write_cmd(cmd);
+		
+		if(~((~cmd) & 0x03)){
+			delay_milli(2);
+			}
+		else{
+			delay_mikro(40);
+			}			
+}
+
+
+
+void ascii_gotoxy(char row, char col){
+		unsigned char adress= row-1;
+		switch (col){
+			case 1:
+			break;
+			case 2:
+			adress = adress + 0x40;
+			break;
+		}
+		ascii_write_cmd(0x80|adress);
+}
+
+void ascii_init(void){
+	delay_milli(40); //ifall ifall
+	*portOdrLow = 0x04;
+	ascii_command(0x38);//sätter antal rader = 2, sätter storlek = 5x8
+	ascii_command(1);			//clear display
+	ascii_command(0xe);//display på,markör,konstant
+	ascii_command(0x4);// Set entry mode
+		
+}
+void ascii_write_char(char c){
+	while((ascii_read_status() & 0x80) == 0x80){
+		delay_250ns;
+		}
+		delay_mikro(8);
+		ascii_write_data(c);
+		delay_mikro(40);
+}
 void init_app(void){
 	*portModer  = 0x55555555;
 }
@@ -318,6 +420,7 @@ void graphic_init(){
 int main(void){
 	init_app();
 	graphic_init();
+	ascii_init();
 	
 	return 0;
 }
