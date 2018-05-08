@@ -3,7 +3,7 @@
   <Project Name="Dance" Path="Dance/Dance.project" Active="Yes"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">
-      <Environment/>
+      <Environment>GccArmDir = /usr/local/gcc-arm</Environment>
       <Project Name="Dance" ConfigName="Debug"/>
     </WorkspaceConfiguration>
     <WorkspaceConfiguration Name="Release" Selected="yes">
